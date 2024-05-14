@@ -5,12 +5,16 @@ import com.blogapplication.app.entity.Post;
 import com.blogapplication.app.entity.User;
 import com.blogapplication.app.exception.ResourceNotFoundException;
 import com.blogapplication.app.payload.PostDto;
+import com.blogapplication.app.payload.PostResponse;
 import com.blogapplication.app.respository.CategoryRepository;
 import com.blogapplication.app.respository.PostRespository;
 import com.blogapplication.app.respository.UserRepository;
 import com.blogapplication.app.service.PostService;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.Date;
@@ -71,10 +75,21 @@ public class PostServiceImpl implements PostService {
     }
 
     @Override
-    public List<PostDto> getAllPost() {
-        List<Post> allPost = postRespository.findAll();
+    public PostResponse getAllPost(Integer pageNumber, Integer pageSize) {
+        Pageable pageable = PageRequest.of(pageNumber,pageSize);
+        Page<Post> pagePost = postRespository.findAll(pageable);
+        List<Post> allPost = pagePost.getContent();
         List<PostDto> allPostDto = allPost.stream().map(post -> modelMapper.map(post,PostDto.class)).collect(Collectors.toList());
-        return allPostDto;
+
+        PostResponse postResponse = new PostResponse();
+        postResponse.setContents(allPostDto);
+        postResponse.setPageNumber(pagePost.getNumber());
+        postResponse.setTotalPages(pagePost.getTotalPages());
+        postResponse.setPageSize(pagePost.getSize());
+        postResponse.setTotalStrength(pagePost.getTotalElements());
+        postResponse.setLastPage(pagePost.isLast());
+
+        return postResponse;
     }
 
     @Override
@@ -86,11 +101,17 @@ public class PostServiceImpl implements PostService {
 
     @Override
     public List<PostDto> getPostByCategory(Long categoryId) {
-        return null;
+        Category category = categoryRepository.findById(categoryId).orElseThrow(()->new ResourceNotFoundException("Category","categoryId",categoryId));
+        List<Post> posts = postRespository.findByCategory(category);
+        List<PostDto> allPostDto = posts.stream().map(post -> modelMapper.map(post,PostDto.class)).collect(Collectors.toList());
+        return allPostDto;
     }
 
     @Override
     public List<PostDto> getPostByUser(Long userId) {
-        return null;
+        User user = userRepository.findById(userId).orElseThrow(()-> new ResourceNotFoundException("User","userId",userId));
+        List<Post> allPosts = postRespository.findByUser(user);
+        List<PostDto> allPostDto = allPosts.stream().map(post -> modelMapper.map(post,PostDto.class)).collect(Collectors.toList());
+        return allPostDto;
     }
 }
