@@ -1,5 +1,6 @@
 package com.blogapplication.app.controller;
 
+import com.blogapplication.app.config.AppConstants;
 import com.blogapplication.app.payload.PostDto;
 import com.blogapplication.app.payload.PostResponse;
 import com.blogapplication.app.service.PostService;
@@ -34,10 +35,12 @@ public class PostController {
 
     @GetMapping("/posts")
     ResponseEntity<PostResponse> getAllPost(
-            @RequestParam(value="pageNumber",defaultValue = "0",required = false) Integer pageNumber,
-            @RequestParam(value="pageSize",defaultValue = "5",required = false) Integer pageSize
+            @RequestParam(value="pageNumber",defaultValue = AppConstants.PAGE_NUMBER,required = false) Integer pageNumber,
+            @RequestParam(value="pageSize",defaultValue = AppConstants.PAGE_SIZE,required = false) Integer pageSize,
+            @RequestParam(value="sortBy", defaultValue = AppConstants.SORT_BY, required = false) String sortBy,
+            @RequestParam(value="sortDir", defaultValue = AppConstants.SORT_DIR, required = false) String sortDir
     ){
-        PostResponse postData = postService.getAllPost(pageNumber,pageSize);
+        PostResponse postData = postService.getAllPost(pageNumber,pageSize,sortBy,sortDir);
         return new ResponseEntity<>(postData, HttpStatus.OK);
     }
 
@@ -63,6 +66,12 @@ public class PostController {
     ResponseEntity<List<PostDto>> getPostByUser(@PathVariable("userId") Long userId){
         List<PostDto> allPostDto = postService.getPostByUser(userId);
         return new ResponseEntity<>(allPostDto,HttpStatus.OK);
+    }
+
+    @GetMapping("/posts/search/{keywords}")
+    ResponseEntity<List<PostDto>> searchPostByTitle(@PathVariable("keywords") String keywords){
+        List<PostDto> allPosts  = postService.searchPost(keywords);
+        return new ResponseEntity<>(allPosts,HttpStatus.OK);
     }
 
 

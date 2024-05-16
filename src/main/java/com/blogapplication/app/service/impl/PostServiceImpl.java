@@ -15,10 +15,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 import java.util.stream.Collectors;
 
 @Service
@@ -75,10 +77,13 @@ public class PostServiceImpl implements PostService {
     }
 
     @Override
-    public PostResponse getAllPost(Integer pageNumber, Integer pageSize) {
-        Pageable pageable = PageRequest.of(pageNumber,pageSize);
+    public PostResponse getAllPost(Integer pageNumber, Integer pageSize, String sortBy, String sortDir) {
+        Sort sort = sortDir.equalsIgnoreCase("ASC")?Sort.by(sortBy).ascending():Sort.by(sortBy).descending();
+        Pageable pageable = PageRequest.of(pageNumber,pageSize,sort);
+
         Page<Post> pagePost = postRespository.findAll(pageable);
         List<Post> allPost = pagePost.getContent();
+
         List<PostDto> allPostDto = allPost.stream().map(post -> modelMapper.map(post,PostDto.class)).collect(Collectors.toList());
 
         PostResponse postResponse = new PostResponse();
@@ -112,6 +117,13 @@ public class PostServiceImpl implements PostService {
         User user = userRepository.findById(userId).orElseThrow(()-> new ResourceNotFoundException("User","userId",userId));
         List<Post> allPosts = postRespository.findByUser(user);
         List<PostDto> allPostDto = allPosts.stream().map(post -> modelMapper.map(post,PostDto.class)).collect(Collectors.toList());
+        return allPostDto;
+    }
+
+    @Override
+    public List<PostDto> searchPost(String keyword) {
+        List<Post> allPost = postRespository.searchPostByTitle("%"+keyword+"%");
+        List<PostDto> allPostDto = allPost.stream().map(post->modelMapper.map(post,PostDto.class)).collect(Collectors.toList());
         return allPostDto;
     }
 }
